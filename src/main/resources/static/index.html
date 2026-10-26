@@ -1,0 +1,363 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowLab — Crash-Proof Workflow Engine</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            flowBg: '#0b0f17',
+            flowSidebar: '#0f172a',
+            flowCard: '#131d2e',
+            flowBorder: '#1e293b',
+            flowGreen: '#10b981',
+            flowBlue: '#3b82f6',
+            flowAmber: '#f59e0b',
+            flowRed: '#ef4444'
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .pulsing-border {
+      animation: pulse-ring 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-flowBg text-slate-100 flex min-h-screen font-sans antialiased">
+
+  <!-- Left Sidebar -->
+  <aside class="w-64 bg-flowSidebar border-r border-flowBorder flex flex-col justify-between p-5">
+    <div>
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+          <i data-lucide="layers" class="w-5 h-5"></i>
+        </div>
+        <span class="text-xl font-bold tracking-tight text-white">FlowLab</span>
+      </div>
+
+      <nav class="space-y-1">
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-indigo-600/20 text-indigo-400 font-medium">
+          <i data-lucide="git-fork" class="w-4 h-4"></i>
+          Workflows
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition">
+          <i data-lucide="list" class="w-4 h-4"></i>
+          Executions
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition">
+          <i data-lucide="check-square" class="w-4 h-4"></i>
+          Tasks
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition">
+          <i data-lucide="calendar" class="w-4 h-4"></i>
+          Schedules
+        </a>
+      </nav>
+    </div>
+
+    <div class="border-t border-flowBorder pt-4">
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-200">
+        <i data-lucide="settings" class="w-4 h-4"></i>
+        Settings
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 flex flex-col overflow-y-auto">
+    <!-- Top Bar -->
+    <header class="p-8 pb-4">
+      <div class="flex items-center text-sm text-slate-400 mb-2 gap-2">
+        <span>Workflows</span>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+        <span class="text-slate-200">Order Processing</span>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-3">
+            <h1 class="text-2xl font-bold text-white tracking-tight">Order Processing</h1>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              Active
+            </span>
+          </div>
+          <p class="text-sm text-slate-400 mt-1">
+            Process customer orders with payment, inventory and notification steps.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label class="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-500/20 cursor-pointer">
+            <input type="checkbox" id="simulateCrashCheck" class="rounded text-amber-500 focus:ring-0">
+            <span>Simulate Worker Crash (Test Recovery)</span>
+          </label>
+          <button id="startWorkflowBtn" onclick="triggerWorkflow()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg shadow-lg shadow-blue-600/30 transition">
+            <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+            Start Workflow
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Workflow Pipeline Step Cards -->
+    <section class="px-8 py-6">
+      <div id="pipelineContainer" class="flex items-center gap-3 overflow-x-auto pb-4">
+        <!-- Step 1: Validate Order -->
+        <div id="card-0" class="flex-1 min-w-[210px] bg-flowCard border border-flowBorder rounded-xl p-4 transition-all">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+              <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-white">Validate Order</h3>
+              <span id="badge-0" class="text-xs text-slate-500 font-medium">Pending</span>
+            </div>
+          </div>
+        </div>
+
+        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 flex-shrink-0"></i>
+
+        <!-- Step 2: Process Payment -->
+        <div id="card-1" class="flex-1 min-w-[210px] bg-flowCard border border-flowBorder rounded-xl p-4 transition-all">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+              <i data-lucide="credit-card" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-white">Process Payment</h3>
+              <span id="badge-1" class="text-xs text-slate-500 font-medium">Pending</span>
+            </div>
+          </div>
+        </div>
+
+        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 flex-shrink-0"></i>
+
+        <!-- Step 3: Update Inventory -->
+        <div id="card-2" class="flex-1 min-w-[210px] bg-flowCard border border-flowBorder rounded-xl p-4 transition-all">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+              <i data-lucide="box" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-white">Update Inventory</h3>
+              <span id="badge-2" class="text-xs text-slate-500 font-medium">Pending</span>
+            </div>
+          </div>
+        </div>
+
+        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 flex-shrink-0"></i>
+
+        <!-- Step 4: Send Notification -->
+        <div id="card-3" class="flex-1 min-w-[210px] bg-flowCard border border-flowBorder rounded-xl p-4 transition-all">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-white">Send Notification</h3>
+              <span id="badge-3" class="text-xs text-slate-500 font-medium">Pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Execution History Section -->
+    <section class="px-8 pb-8 flex-1">
+      <div class="bg-flowCard border border-flowBorder rounded-xl overflow-hidden shadow-xl">
+        <div class="px-6 py-4 border-b border-flowBorder flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <h2 class="font-semibold text-white text-base">Execution History</h2>
+            <span id="activeExecutionLabel" class="text-xs text-slate-400 font-mono">No active run</span>
+          </div>
+          <button onclick="openLogsModal()" class="flex items-center gap-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 px-3 py-1.5 rounded-lg transition">
+            <i data-lucide="terminal" class="w-3.5 h-3.5"></i>
+            View Logs
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-900/60 text-slate-400 text-xs uppercase tracking-wider border-b border-flowBorder">
+              <tr>
+                <th class="px-6 py-3.5 font-medium">Step</th>
+                <th class="px-6 py-3.5 font-medium">Status</th>
+                <th class="px-6 py-3.5 font-medium">Started At</th>
+                <th class="px-6 py-3.5 font-medium">Duration</th>
+                <th class="px-6 py-3.5 font-medium">Attempts</th>
+                <th class="px-6 py-3.5 font-medium">Output / Error</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-flowBorder font-mono text-xs">
+              <tr>
+                <td colspan="6" class="px-6 py-8 text-center text-slate-500">
+                  Click <span class="text-blue-400">"Start Workflow"</span> to initiate execution.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    lucide.createIcons();
+
+    let currentExecutionId = null;
+    let pollInterval = null;
+
+    async function triggerWorkflow() {
+      const simulateCrash = document.getElementById('simulateCrashCheck').checked;
+      const btn = document.getElementById('startWorkflowBtn');
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      try {
+        const payload = {
+          orderId: "ORD-" + Math.floor(1000 + Math.random() * 9000),
+          customerEmail: "user@example.com",
+          amount: 249.99,
+          simulate_crash: simulateCrash
+        };
+
+        const res = await fetch('/api/workflows/order-processing-workflow/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Failed to start workflow");
+        const data = await res.json();
+        currentExecutionId = data.id;
+
+        document.getElementById('activeExecutionLabel').textContent = `Execution ID: ${currentExecutionId}`;
+
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(fetchSteps, 1000);
+        fetchSteps();
+
+      } catch (err) {
+        alert("Error starting workflow: " + err.message);
+      } finally {
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+        }, 1000);
+      }
+    }
+
+    async function fetchSteps() {
+      if (!currentExecutionId) return;
+
+      try {
+        const res = await fetch(`/api/workflows/executions/${currentExecutionId}/steps`);
+        if (!res.ok) return;
+        const steps = await res.json();
+        renderPipeline(steps);
+        renderHistory(steps);
+
+        const allFinished = steps.every(s => s.status === 'COMPLETED' || s.status === 'FAILED');
+        if (allFinished && pollInterval) {
+          clearInterval(pollInterval);
+        }
+      } catch (e) {
+        console.error("Poll error:", e);
+      }
+    }
+
+    function renderPipeline(steps) {
+      steps.forEach((step, idx) => {
+        const card = document.getElementById(`card-${idx}`);
+        const badge = document.getElementById(`badge-${idx}`);
+        if (!card || !badge) return;
+
+        card.className = "flex-1 min-w-[210px] bg-flowCard border rounded-xl p-4 transition-all";
+
+        if (step.status === 'COMPLETED') {
+          card.classList.add('border-emerald-500/60', 'bg-emerald-950/20');
+          badge.textContent = 'Completed';
+          badge.className = 'text-xs text-emerald-400 font-semibold';
+        } else if (step.status === 'RUNNING') {
+          card.classList.add('border-blue-500', 'bg-blue-950/30', 'pulsing-border');
+          badge.textContent = `Running (${step.attemptCount} attempt)`;
+          badge.className = 'text-xs text-blue-400 font-semibold';
+        } else if (step.status === 'RETRYING') {
+          card.classList.add('border-amber-500', 'bg-amber-950/30');
+          badge.textContent = 'Retrying...';
+          badge.className = 'text-xs text-amber-400 font-semibold';
+        } else if (step.status === 'FAILED') {
+          card.classList.add('border-red-500', 'bg-red-950/30');
+          badge.textContent = 'Failed';
+          badge.className = 'text-xs text-red-400 font-semibold';
+        } else {
+          card.classList.add('border-flowBorder');
+          badge.textContent = 'Pending';
+          badge.className = 'text-xs text-slate-500 font-medium';
+        }
+      });
+    }
+
+    function renderHistory(steps) {
+      const tbody = document.getElementById('historyTableBody');
+      tbody.innerHTML = '';
+
+      steps.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/30 transition";
+
+        const statusPill = getStatusPill(s.status);
+        const started = s.startedAt ? new Date(s.startedAt).toLocaleTimeString() : '-';
+        const duration = s.durationMs ? `${(s.durationMs / 1000).toFixed(1)}s` : (s.status === 'RUNNING' ? 'In progress' : '-');
+        const output = s.errorMessage ? `<span class="text-red-400">${s.errorMessage}</span>` : (s.outputPayload ? `<span class="text-slate-400 truncate max-w-xs block">${s.outputPayload}</span>` : '-');
+
+        tr.innerHTML = `
+          <td class="px-6 py-3.5 text-white font-sans font-medium text-xs">${s.stepName}</td>
+          <td class="px-6 py-3.5">${statusPill}</td>
+          <td class="px-6 py-3.5 text-slate-400">${started}</td>
+          <td class="px-6 py-3.5 text-slate-300">${duration}</td>
+          <td class="px-6 py-3.5 text-slate-300">${s.attemptCount}</td>
+          <td class="px-6 py-3.5">${output}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function getStatusPill(status) {
+      if (status === 'COMPLETED') {
+        return '<span class="inline-flex items-center gap-1.5 text-emerald-400 font-sans"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Success</span>';
+      } else if (status === 'RUNNING') {
+        return '<span class="inline-flex items-center gap-1.5 text-blue-400 font-sans"><span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span> Running</span>';
+      } else if (status === 'RETRYING') {
+        return '<span class="inline-flex items-center gap-1.5 text-amber-400 font-sans"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Retrying</span>';
+      } else if (status === 'FAILED') {
+        return '<span class="inline-flex items-center gap-1.5 text-red-400 font-sans"><span class="w-2 h-2 rounded-full bg-red-400"></span> Failed</span>';
+      }
+      return '<span class="inline-flex items-center gap-1.5 text-slate-500 font-sans"><span class="w-2 h-2 rounded-full bg-slate-600"></span> Pending</span>';
+    }
+
+    function openLogsModal() {
+      if (!currentExecutionId) {
+        alert("Please start a workflow first to view execution logs.");
+        return;
+      }
+      window.open(`/api/workflows/executions/${currentExecutionId}/steps`, '_blank');
+    }
+  </script>
+</body>
+</html>
