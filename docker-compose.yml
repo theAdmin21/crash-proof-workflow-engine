@@ -57,6 +57,23 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
 
+  # 4. FlowLab Engine & Web Dashboard (Runs 24/7 Independently)
+  engine:
+    build: .
+    container_name: flowlab-engine
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowlab_db
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   redis_data:

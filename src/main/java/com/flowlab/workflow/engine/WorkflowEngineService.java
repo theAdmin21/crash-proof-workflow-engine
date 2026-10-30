@@ -128,7 +128,7 @@ public class WorkflowEngineService {
                 log.info("[Execution {}] Step '{}' COMPLETED in {}ms", executionId, currentStep.getStepName(), stepRecord.getDurationMs());
 
                 // Advance to next step
-                advanceToNextStep(executionId, stepIndex + 1);
+                advanceToNextStep(executionId, stepIndex + 1, result.getOutputPayload());
             } else {
                 handleStepFailure(executionId, stepRecord, result.getErrorMessage(), result.isShouldRetry());
             }
@@ -172,13 +172,19 @@ public class WorkflowEngineService {
         }
     }
 
-    private void advanceToNextStep(String executionId, int nextIndex) {
+    private void advanceToNextStep(String executionId, int nextIndex, String previousOutput) {
         WorkflowExecution execution = executionRepository.findById(executionId).orElse(null);
         if (execution != null) {
             execution.setCurrentStepIndex(nextIndex);
             execution.setUpdatedAt(Instant.now());
             executionRepository.save(execution);
         }
+        stepRepository.findByExecutionIdAndStepIndex(executionId, nextIndex).ifPresent(nextStep -> {
+            if (previousOutput != null) {
+                nextStep.setInputPayload(previousOutput);
+                stepRepository.save(nextStep);
+            }
+        });
         CompletableFuture.runAsync(() -> executeStepAsync(executionId, nextIndex));
     }
 

@@ -1,9 +1,11 @@
 package com.flowlab.workflow.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flowlab.workflow.domain.Product;
 import com.flowlab.workflow.domain.StepExecution;
 import com.flowlab.workflow.domain.WorkflowExecution;
 import com.flowlab.workflow.engine.WorkflowEngineService;
+import com.flowlab.workflow.repository.ProductRepository;
 import com.flowlab.workflow.repository.StepExecutionRepository;
 import com.flowlab.workflow.repository.WorkflowExecutionRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,13 @@ public class WorkflowController {
     private final WorkflowEngineService engineService;
     private final WorkflowExecutionRepository executionRepository;
     private final StepExecutionRepository stepRepository;
+    private final ProductRepository productRepository;
     private final ObjectMapper objectMapper;
+
+    @GetMapping("/products")
+    public ResponseEntity<List<Product>> getProducts() {
+        return ResponseEntity.ok(productRepository.findAll());
+    }
 
     @PostMapping("/{workflowId}/start")
     public ResponseEntity<WorkflowExecution> startWorkflow(

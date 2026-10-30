@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -60,21 +60,16 @@
           Executions
         </a>
         <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition">
-          <i data-lucide="check-square" class="w-4 h-4"></i>
-          Tasks
-        </a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition">
-          <i data-lucide="calendar" class="w-4 h-4"></i>
-          Schedules
+          <i data-lucide="box" class="w-4 h-4"></i>
+          Inventory
         </a>
       </nav>
     </div>
 
     <div class="border-t border-flowBorder pt-4">
-      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-200">
-        <i data-lucide="settings" class="w-4 h-4"></i>
-        Settings
-      </a>
+      <div class="text-xs text-slate-500">
+        Engine: <span class="text-emerald-400 font-semibold">Active & Healthy</span>
+      </div>
     </div>
   </aside>
 
@@ -97,7 +92,7 @@
             </span>
           </div>
           <p class="text-sm text-slate-400 mt-1">
-            Process customer orders with payment, inventory and notification steps.
+            Real transactional order pipeline with ACID stock reservation and durable failure recovery.
           </p>
         </div>
 
@@ -106,16 +101,60 @@
             <input type="checkbox" id="simulateCrashCheck" class="rounded text-amber-500 focus:ring-0">
             <span>Simulate Worker Crash (Test Recovery)</span>
           </label>
-          <button id="startWorkflowBtn" onclick="triggerWorkflow()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg shadow-lg shadow-blue-600/30 transition">
+          <button id="startWorkflowBtn" onclick="triggerWorkflow()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-5 py-2.5 rounded-lg shadow-lg shadow-blue-600/30 transition">
             <i data-lucide="play" class="w-4 h-4 fill-current"></i>
-            Start Workflow
+            Place Order & Run
           </button>
         </div>
       </div>
     </header>
 
+    <!-- Real Data Order Configuration Panel -->
+    <section class="px-8 py-3">
+      <div class="bg-flowCard border border-flowBorder rounded-xl p-5 shadow-lg">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+          <i data-lucide="shopping-bag" class="w-4 h-4 text-indigo-400"></i>
+          Order Details (Live Product Catalog)
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Select Product</label>
+            <select id="productSelect" onchange="updateCalculations()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+              <option value="SKU-IPHONE">Loading products...</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Quantity</label>
+            <input type="number" id="orderQty" min="1" max="10" value="1" onchange="updateCalculations()" onkeyup="updateCalculations()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Customer Name</label>
+            <input type="text" id="custName" value="Vishal Gupta" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Customer Email</label>
+            <input type="email" id="custEmail" value="vishal@example.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+          <div class="text-slate-400 flex items-center gap-2">
+            <span>Available Stock in DB:</span>
+            <span id="stockIndicator" class="text-emerald-400 font-semibold">Checking...</span>
+          </div>
+          <div class="text-slate-300 text-sm">
+            Total Charge: <span id="totalDisplay" class="text-indigo-400 font-bold text-base">₹0</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Workflow Pipeline Step Cards -->
-    <section class="px-8 py-6">
+    <section class="px-8 py-4">
       <div id="pipelineContainer" class="flex items-center gap-3 overflow-x-auto pb-4">
         <!-- Step 1: Validate Order -->
         <div id="card-0" class="flex-1 min-w-[210px] bg-flowCard border border-flowBorder rounded-xl p-4 transition-all">
@@ -206,7 +245,7 @@
             <tbody id="historyTableBody" class="divide-y divide-flowBorder font-mono text-xs">
               <tr>
                 <td colspan="6" class="px-6 py-8 text-center text-slate-500">
-                  Click <span class="text-blue-400">"Start Workflow"</span> to initiate execution.
+                  Select a product above and click <span class="text-blue-400">"Place Order & Run"</span>.
                 </td>
               </tr>
             </tbody>
@@ -221,9 +260,53 @@
 
     let currentExecutionId = null;
     let pollInterval = null;
+    let productsList = [];
+
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/workflows/products');
+        if (!res.ok) return;
+        productsList = await res.json();
+
+        const select = document.getElementById('productSelect');
+        select.innerHTML = '';
+        productsList.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.sku;
+          opt.textContent = `${p.name} — ₹${Number(p.price).toLocaleString('en-IN')}`;
+          select.appendChild(opt);
+        });
+
+        updateCalculations();
+      } catch (err) {
+        console.error("Error loading products:", err);
+      }
+    }
+
+    function updateCalculations() {
+      const select = document.getElementById('productSelect');
+      const qty = parseInt(document.getElementById('orderQty').value) || 1;
+      const selected = productsList.find(p => p.sku === select.value);
+
+      if (selected) {
+        const total = selected.price * qty;
+        document.getElementById('totalDisplay').textContent = `₹${total.toLocaleString('en-IN')}`;
+        document.getElementById('stockIndicator').textContent = `${selected.stockQuantity} units left`;
+        if (selected.stockQuantity < qty) {
+          document.getElementById('stockIndicator').className = 'text-red-400 font-semibold';
+        } else {
+          document.getElementById('stockIndicator').className = 'text-emerald-400 font-semibold';
+        }
+      }
+    }
 
     async function triggerWorkflow() {
       const simulateCrash = document.getElementById('simulateCrashCheck').checked;
+      const select = document.getElementById('productSelect');
+      const qty = parseInt(document.getElementById('orderQty').value) || 1;
+      const name = document.getElementById('custName').value || 'Customer';
+      const email = document.getElementById('custEmail').value || 'user@example.com';
+
       const btn = document.getElementById('startWorkflowBtn');
       btn.disabled = true;
       btn.classList.add('opacity-50');
@@ -231,8 +314,10 @@
       try {
         const payload = {
           orderId: "ORD-" + Math.floor(1000 + Math.random() * 9000),
-          customerEmail: "user@example.com",
-          amount: 249.99,
+          customerName: name,
+          customerEmail: email,
+          sku: select.value,
+          quantity: qty,
           simulate_crash: simulateCrash
         };
 
@@ -275,6 +360,7 @@
         const allFinished = steps.every(s => s.status === 'COMPLETED' || s.status === 'FAILED');
         if (allFinished && pollInterval) {
           clearInterval(pollInterval);
+          loadProducts(); // refresh remaining stock!
         }
       } catch (e) {
         console.error("Poll error:", e);
@@ -324,7 +410,7 @@
         const statusPill = getStatusPill(s.status);
         const started = s.startedAt ? new Date(s.startedAt).toLocaleTimeString() : '-';
         const duration = s.durationMs ? `${(s.durationMs / 1000).toFixed(1)}s` : (s.status === 'RUNNING' ? 'In progress' : '-');
-        const output = s.errorMessage ? `<span class="text-red-400">${s.errorMessage}</span>` : (s.outputPayload ? `<span class="text-slate-400 truncate max-w-xs block">${s.outputPayload}</span>` : '-');
+        const output = s.errorMessage ? `<span class="text-red-400">${s.errorMessage}</span>` : (s.outputPayload ? `<span class="text-slate-300 font-sans truncate max-w-xs block">${s.outputPayload}</span>` : '-');
 
         tr.innerHTML = `
           <td class="px-6 py-3.5 text-white font-sans font-medium text-xs">${s.stepName}</td>
@@ -358,6 +444,9 @@
       }
       window.open(`/api/workflows/executions/${currentExecutionId}/steps`, '_blank');
     }
+
+    // Initialize on page load
+    loadProducts();
   </script>
 </body>
 </html>
