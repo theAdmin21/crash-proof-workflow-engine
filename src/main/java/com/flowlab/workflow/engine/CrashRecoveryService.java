@@ -1,4 +1,4 @@
-﻿package com.flowlab.workflow.engine;
+package com.flowlab.workflow.engine;
 
 import com.flowlab.workflow.domain.StepExecution;
 import com.flowlab.workflow.domain.StepStatus;

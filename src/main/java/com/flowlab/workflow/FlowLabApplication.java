@@ -1,4 +1,4 @@
-﻿package com.flowlab.workflow;
+package com.flowlab.workflow;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

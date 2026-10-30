@@ -1,4 +1,4 @@
-﻿package com.flowlab.workflow.step;
+package com.flowlab.workflow.step;
 
 public interface WorkflowStep {
     String getStepName();

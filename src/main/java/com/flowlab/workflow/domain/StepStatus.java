@@ -1,4 +1,4 @@
-﻿package com.flowlab.workflow.domain;
+package com.flowlab.workflow.domain;
 
 public enum StepStatus {
     PENDING,

@@ -1,4 +1,4 @@
-﻿package com.flowlab.workflow.step.order;
+package com.flowlab.workflow.step.order;
 
 import com.flowlab.workflow.step.StepExecutionContext;
 import com.flowlab.workflow.step.StepResult;

@@ -1,4 +1,4 @@
-﻿package com.flowlab.workflow.controller;
+package com.flowlab.workflow.controller;
 
 import com.flowlab.workflow.domain.StepExecution;
 import com.flowlab.workflow.domain.WorkflowExecution;
