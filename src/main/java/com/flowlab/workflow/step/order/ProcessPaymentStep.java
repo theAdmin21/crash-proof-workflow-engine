@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -19,6 +20,7 @@ import java.util.UUID;
 public class ProcessPaymentStep implements WorkflowStep {
 
     private final ObjectMapper objectMapper;
+    private final com.flowlab.workflow.notification.NotificationService notificationService;
 
     @Override
     public String getStepName() {
@@ -27,7 +29,12 @@ public class ProcessPaymentStep implements WorkflowStep {
 
     @Override
     public int getOrder() {
-        return 1;
+        return 3;
+    }
+
+    @Override
+    public List<Integer> getDependencies() {
+        return List.of(1, 2); // Synchronization barrier: waits for both Fraud Risk Check and Warehouse Routing
     }
 
     @Override
@@ -72,6 +79,22 @@ public class ProcessPaymentStep implements WorkflowStep {
         String refundId = "REF-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         log.warn("↩️ [SAGA-COMPENSATION] Auto-refunded payment of ₹{} for {} (Original Txn: {}, Refund ID: {})",
                 amount, customer, txnId, refundId);
+
+        if (prev != null && prev.has("webhookUrl") && !prev.get("webhookUrl").asText().isBlank()) {
+            notificationService.sendWebhookNotification(
+                    prev.get("webhookUrl").asText(),
+                    "↩️ FlowLab Payment Auto-Refunded!",
+                    "A downstream failure triggered an automatic Saga compensation rollback.",
+                    Map.of(
+                            "Customer", customer,
+                            "Refund ID", refundId,
+                            "Original Txn", txnId,
+                            "Amount Refunded", "₹" + amount,
+                            "Execution ID", context.getExecutionId()
+                    ),
+                    0x8B5CF6 // Purple
+            );
+        }
 
         String result = objectMapper.writeValueAsString(Map.of(
                 "compensationStatus", "REFUND_PROCESSED",

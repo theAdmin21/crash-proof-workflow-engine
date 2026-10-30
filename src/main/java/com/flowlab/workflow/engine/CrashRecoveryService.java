@@ -19,6 +19,7 @@ public class CrashRecoveryService {
 
     private final StepExecutionRepository stepRepository;
     private final WorkflowEngineService engineService;
+    private final org.redisson.api.RedissonClient redissonClient;
 
     @Value("${workflow.engine.worker-heartbeat-timeout-sec:30}")
     private long heartbeatTimeoutSec;
@@ -39,7 +40,15 @@ public class CrashRecoveryService {
                 log.info("Resuming crashed step '{}' for execution {}", step.getStepName(), step.getExecutionId());
                 step.setStatus(StepStatus.RETRYING);
                 stepRepository.save(step);
-                engineService.executeStepAsync(step.getExecutionId(), step.getStepIndex());
+
+                // Reclaim and unlock any orphaned Redis locks held by the terminated worker
+                String lockKey = "lock:step:" + step.getExecutionId() + ":" + step.getStepIndex();
+                try {
+                    redissonClient.getLock(lockKey).forceUnlock();
+                    log.info("🔓 [LOCK-RECLAIM] Force-unlocked orphaned Redis lock for {}:{}", step.getExecutionId(), step.getStepIndex());
+                } catch (Exception ignored) {}
+
+                engineService.dispatchStep(step.getExecutionId(), step.getStepIndex(), step.getStepName());
             }
         }
     }

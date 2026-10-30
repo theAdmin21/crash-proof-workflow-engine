@@ -55,13 +55,13 @@
           <i data-lucide="git-fork" class="w-4 h-4"></i>
           Workflows
         </a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition">
-          <i data-lucide="list" class="w-4 h-4"></i>
-          Executions
+        <a href="/actuator/prometheus" target="_blank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition">
+          <i data-lucide="activity" class="w-4 h-4 text-orange-400"></i>
+          Prometheus Metrics
         </a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition">
-          <i data-lucide="box" class="w-4 h-4"></i>
-          Inventory
+        <a href="http://localhost:3000" target="_blank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition">
+          <i data-lucide="gauge" class="w-4 h-4 text-amber-400"></i>
+          Grafana Dashboard
         </a>
       </nav>
     </div>
@@ -96,14 +96,18 @@
           </p>
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
           <label class="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-500/20 cursor-pointer">
             <input type="checkbox" id="simulateCrashCheck" class="rounded text-amber-500 focus:ring-0">
             <span>Simulate Crash (Retry)</span>
           </label>
+          <label class="flex items-center gap-2 text-xs text-rose-400 bg-rose-500/10 px-3 py-2 rounded-lg border border-rose-500/20 cursor-pointer">
+            <input type="checkbox" id="simulateFraudCheck" class="rounded text-rose-500 focus:ring-0">
+            <span>Simulate Fraud Alert</span>
+          </label>
           <label class="flex items-center gap-2 text-xs text-purple-400 bg-purple-500/10 px-3 py-2 rounded-lg border border-purple-500/20 cursor-pointer">
             <input type="checkbox" id="simulateFatalCheck" class="rounded text-purple-500 focus:ring-0">
-            <span>Simulate Fatal Error (Test Saga Rollback)</span>
+            <span>Simulate Fatal (Saga)</span>
           </label>
           <button id="startWorkflowBtn" onclick="triggerWorkflow()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-5 py-2.5 rounded-lg shadow-lg shadow-blue-600/30 transition">
             <i data-lucide="play" class="w-4 h-4 fill-current"></i>
@@ -118,10 +122,10 @@
       <div class="bg-flowCard border border-flowBorder rounded-xl p-5 shadow-lg">
         <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
           <i data-lucide="shopping-bag" class="w-4 h-4 text-indigo-400"></i>
-          Order Details (Live Product Catalog)
+          Order Details & Integrations
         </h2>
         
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Select Product</label>
             <select id="productSelect" onchange="updateCalculations()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
@@ -143,6 +147,14 @@
             <label class="block text-xs text-slate-400 mb-1">Customer Email</label>
             <input type="email" id="custEmail" value="vishal@example.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
           </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1 flex items-center justify-between">
+              <span>Webhook Alert URL</span>
+              <span class="text-[10px] text-slate-500">Discord/Slack/Site</span>
+            </label>
+            <input type="url" id="webhookUrl" placeholder="https://webhook.site/..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 placeholder:text-slate-600">
+          </div>
         </div>
 
         <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
@@ -157,63 +169,99 @@
       </div>
     </section>
 
-    <!-- Workflow Pipeline Step Cards -->
+    <!-- Workflow Pipeline Step Cards (6-Step DAG Architecture) -->
     <section class="px-8 py-4">
-      <div id="pipelineContainer" class="flex items-center gap-3 overflow-x-auto pb-4">
-        <!-- Step 1: Validate Order -->
-        <div id="card-0" class="flex-1 min-w-[210px] bg-flowCard border border-flowBorder rounded-xl p-4 transition-all">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
-              <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+      <div id="pipelineContainer" class="flex items-center gap-2 overflow-x-auto pb-4">
+        <!-- Step 0: Validate Order -->
+        <div id="card-0" class="flex-1 min-w-[170px] bg-flowCard border border-flowBorder rounded-xl p-3.5 transition-all">
+          <div class="flex items-center gap-2.5 mb-2">
+            <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+              <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-white">Validate Order</h3>
-              <span id="badge-0" class="text-xs text-slate-500 font-medium">Pending</span>
+              <h3 class="text-xs font-semibold text-white">Validate Order</h3>
+              <span id="badge-0" class="text-[11px] text-slate-500 font-medium">Pending</span>
             </div>
           </div>
         </div>
 
-        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 flex-shrink-0"></i>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-600 flex-shrink-0"></i>
 
-        <!-- Step 2: Process Payment -->
-        <div id="card-1" class="flex-1 min-w-[210px] bg-flowCard border border-flowBorder rounded-xl p-4 transition-all">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
-              <i data-lucide="credit-card" class="w-4 h-4"></i>
+        <!-- Step 1: Fraud Risk Check (⚡ Parallel) -->
+        <div id="card-1" class="flex-1 min-w-[170px] bg-flowCard border border-flowBorder rounded-xl p-3.5 transition-all">
+          <div class="flex items-center gap-2.5 mb-2">
+            <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-rose-400">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-white">Process Payment</h3>
-              <span id="badge-1" class="text-xs text-slate-500 font-medium">Pending</span>
+              <div class="flex items-center gap-1">
+                <h3 class="text-xs font-semibold text-white">Fraud Risk</h3>
+                <span class="text-[9px] text-cyan-400 font-mono">⚡PARALLEL</span>
+              </div>
+              <span id="badge-1" class="text-[11px] text-slate-500 font-medium">Pending</span>
             </div>
           </div>
         </div>
 
-        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 flex-shrink-0"></i>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-600 flex-shrink-0"></i>
 
-        <!-- Step 3: Update Inventory -->
-        <div id="card-2" class="flex-1 min-w-[210px] bg-flowCard border border-flowBorder rounded-xl p-4 transition-all">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
-              <i data-lucide="box" class="w-4 h-4"></i>
+        <!-- Step 2: Warehouse Routing (⚡ Parallel) -->
+        <div id="card-2" class="flex-1 min-w-[170px] bg-flowCard border border-flowBorder rounded-xl p-3.5 transition-all">
+          <div class="flex items-center gap-2.5 mb-2">
+            <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-cyan-400">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-white">Update Inventory</h3>
-              <span id="badge-2" class="text-xs text-slate-500 font-medium">Pending</span>
+              <div class="flex items-center gap-1">
+                <h3 class="text-xs font-semibold text-white">Hub Routing</h3>
+                <span class="text-[9px] text-cyan-400 font-mono">⚡PARALLEL</span>
+              </div>
+              <span id="badge-2" class="text-[11px] text-slate-500 font-medium">Pending</span>
             </div>
           </div>
         </div>
 
-        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 flex-shrink-0"></i>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-600 flex-shrink-0"></i>
 
-        <!-- Step 4: Send Notification -->
-        <div id="card-3" class="flex-1 min-w-[210px] bg-flowCard border border-flowBorder rounded-xl p-4 transition-all">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
-              <i data-lucide="mail" class="w-4 h-4"></i>
+        <!-- Step 3: Process Payment -->
+        <div id="card-3" class="flex-1 min-w-[170px] bg-flowCard border border-flowBorder rounded-xl p-3.5 transition-all">
+          <div class="flex items-center gap-2.5 mb-2">
+            <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+              <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-white">Send Notification</h3>
-              <span id="badge-3" class="text-xs text-slate-500 font-medium">Pending</span>
+              <h3 class="text-xs font-semibold text-white">Process Payment</h3>
+              <span id="badge-3" class="text-[11px] text-slate-500 font-medium">Pending</span>
+            </div>
+          </div>
+        </div>
+
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-600 flex-shrink-0"></i>
+
+        <!-- Step 4: Update Inventory -->
+        <div id="card-4" class="flex-1 min-w-[170px] bg-flowCard border border-flowBorder rounded-xl p-3.5 transition-all">
+          <div class="flex items-center gap-2.5 mb-2">
+            <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+              <i data-lucide="box" class="w-3.5 h-3.5"></i>
+            </div>
+            <div>
+              <h3 class="text-xs font-semibold text-white">Update Inventory</h3>
+              <span id="badge-4" class="text-[11px] text-slate-500 font-medium">Pending</span>
+            </div>
+          </div>
+        </div>
+
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-600 flex-shrink-0"></i>
+
+        <!-- Step 5: Send Notification -->
+        <div id="card-5" class="flex-1 min-w-[170px] bg-flowCard border border-flowBorder rounded-xl p-3.5 transition-all">
+          <div class="flex items-center gap-2.5 mb-2">
+            <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+              <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+            </div>
+            <div>
+              <h3 class="text-xs font-semibold text-white">Send Notification</h3>
+              <span id="badge-5" class="text-[11px] text-slate-500 font-medium">Pending</span>
             </div>
           </div>
         </div>
@@ -307,6 +355,8 @@
     async function triggerWorkflow() {
       const simulateCrash = document.getElementById('simulateCrashCheck').checked;
       const simulateFatal = document.getElementById('simulateFatalCheck').checked;
+      const simulateFraud = document.getElementById('simulateFraudCheck').checked;
+      const webhookUrl = document.getElementById('webhookUrl').value.trim();
       const select = document.getElementById('productSelect');
       const qty = parseInt(document.getElementById('orderQty').value) || 1;
       const name = document.getElementById('custName').value || 'Customer';
@@ -324,7 +374,9 @@
           sku: select.value,
           quantity: qty,
           simulate_crash: simulateCrash,
-          simulate_fatal: simulateFatal
+          simulate_fatal: simulateFatal,
+          simulate_fraud: simulateFraud,
+          webhookUrl: webhookUrl
         };
 
         const res = await fetch('/api/workflows/order-processing-workflow/start', {
@@ -379,7 +431,7 @@
         const badge = document.getElementById(`badge-${idx}`);
         if (!card || !badge) return;
 
-        card.className = "flex-1 min-w-[210px] bg-flowCard border rounded-xl p-4 transition-all";
+        card.className = "flex-1 min-w-[160px] bg-flowCard border rounded-xl p-3.5 transition-all";
 
         if (step.status === 'COMPLETED') {
           card.classList.add('border-emerald-500/60', 'bg-emerald-950/20');

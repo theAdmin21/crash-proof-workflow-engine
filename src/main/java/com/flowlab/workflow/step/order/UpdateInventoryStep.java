@@ -31,7 +31,12 @@ public class UpdateInventoryStep implements WorkflowStep {
 
     @Override
     public int getOrder() {
-        return 2;
+        return 4;
+    }
+
+    @Override
+    public java.util.List<Integer> getDependencies() {
+        return java.util.List.of(3);
     }
 
     @Override

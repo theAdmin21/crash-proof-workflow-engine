@@ -42,6 +42,8 @@ public class ValidateOrderStep implements WorkflowStep {
         String customerName = root.has("customerName") ? root.get("customerName").asText() : "Customer";
         boolean simulateCrash = root.has("simulate_crash") && root.get("simulate_crash").asBoolean();
         boolean simulateFatal = root.has("simulate_fatal") && root.get("simulate_fatal").asBoolean();
+        boolean simulateFraud = root.has("simulate_fraud") && root.get("simulate_fraud").asBoolean();
+        String webhookUrl = root.has("webhookUrl") ? root.get("webhookUrl").asText() : "";
 
         Product product = productRepository.findById(sku)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with SKU: " + sku));
@@ -65,6 +67,8 @@ public class ValidateOrderStep implements WorkflowStep {
         outMap.put("customerEmail", customerEmail);
         outMap.put("simulate_crash", simulateCrash);
         outMap.put("simulate_fatal", simulateFatal);
+        outMap.put("simulate_fraud", simulateFraud);
+        outMap.put("webhookUrl", webhookUrl);
 
         String output = objectMapper.writeValueAsString(outMap);
 

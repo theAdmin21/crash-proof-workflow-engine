@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -17,6 +18,7 @@ import java.util.Map;
 public class SendNotificationStep implements WorkflowStep {
 
     private final ObjectMapper objectMapper;
+    private final com.flowlab.workflow.notification.NotificationService notificationService;
 
     @Override
     public String getStepName() {
@@ -25,7 +27,12 @@ public class SendNotificationStep implements WorkflowStep {
 
     @Override
     public int getOrder() {
-        return 3;
+        return 5;
+    }
+
+    @Override
+    public java.util.List<Integer> getDependencies() {
+        return java.util.List.of(4);
     }
 
     @Override
@@ -39,20 +46,39 @@ public class SendNotificationStep implements WorkflowStep {
         String total = prev.has("totalAmount") ? prev.get("totalAmount").asText() : "0.00";
         String txn = prev.has("transactionId") ? prev.get("transactionId").asText() : "TXN-DEFAULT";
         String res = prev.has("reservationId") ? prev.get("reservationId").asText() : "RES-DEFAULT";
+        String webhookUrl = prev.has("webhookUrl") ? prev.get("webhookUrl").asText() : null;
 
         log.info("Dispatched confirmation email to {} for {}. Receipt Total: ₹{}, TxnId: {}, Reservation: {}",
                 email, customer, total, txn, res);
 
-        String output = objectMapper.writeValueAsString(Map.of(
-                "emailDelivered", true,
-                "recipient", email,
-                "customerName", customer,
-                "product", product,
-                "totalCharged", "₹" + total,
-                "transactionId", txn,
-                "shipmentTracking", res
-        ));
+        boolean webhookSent = false;
+        if (webhookUrl != null && !webhookUrl.isBlank()) {
+            webhookSent = notificationService.sendWebhookNotification(
+                    webhookUrl,
+                    "🎉 FlowLab Order Confirmed!",
+                    "Your multi-step workflow completed flawlessly with zero duplicate side effects.",
+                    Map.of(
+                            "Customer", customer,
+                            "Product", product,
+                            "Amount Paid", "₹" + total,
+                            "Transaction ID", txn,
+                            "Tracking ID", res,
+                            "Execution ID", context.getExecutionId()
+                    ),
+                    0x10B981 // Emerald green
+            );
+        }
 
-        return StepResult.ok(output);
+        Map<String, Object> output = new HashMap<>();
+        output.put("emailDelivered", true);
+        output.put("recipient", email);
+        output.put("customerName", customer);
+        output.put("product", product);
+        output.put("totalCharged", "₹" + total);
+        output.put("transactionId", txn);
+        output.put("shipmentTracking", res);
+        output.put("webhookDelivered", webhookSent);
+
+        return StepResult.ok(objectMapper.writeValueAsString(output));
     }
 }

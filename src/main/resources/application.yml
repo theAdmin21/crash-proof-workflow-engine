@@ -1,4 +1,4 @@
-﻿server:
+server:
   port: 8080
 
 spring:
@@ -49,6 +49,19 @@ workflow:
     max-retry-attempts: 3
     # Initial backoff delay (seconds)
     retry-backoff-sec: 2
+    # Kafka step topic
+    step-topic: workflow-step-tasks
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
 
 logging:
   level:
