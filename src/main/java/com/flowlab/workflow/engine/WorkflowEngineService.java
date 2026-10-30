@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -77,7 +78,7 @@ public class WorkflowEngineService {
         }
 
         // Kick off step execution asynchronously
-        executeStepAsync(executionId, 0);
+        CompletableFuture.runAsync(() -> executeStepAsync(executionId, 0));
 
         return execution;
     }
@@ -178,7 +179,7 @@ public class WorkflowEngineService {
             execution.setUpdatedAt(Instant.now());
             executionRepository.save(execution);
         }
-        executeStepAsync(executionId, nextIndex);
+        CompletableFuture.runAsync(() -> executeStepAsync(executionId, nextIndex));
     }
 
     private void markWorkflowCompleted(String executionId) {

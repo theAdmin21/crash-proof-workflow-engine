@@ -1,5 +1,6 @@
 package com.flowlab.workflow.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flowlab.workflow.domain.StepExecution;
 import com.flowlab.workflow.domain.WorkflowExecution;
 import com.flowlab.workflow.engine.WorkflowEngineService;
@@ -21,12 +22,18 @@ public class WorkflowController {
     private final WorkflowEngineService engineService;
     private final WorkflowExecutionRepository executionRepository;
     private final StepExecutionRepository stepRepository;
+    private final ObjectMapper objectMapper;
 
     @PostMapping("/{workflowId}/start")
     public ResponseEntity<WorkflowExecution> startWorkflow(
             @PathVariable String workflowId,
             @RequestBody(required = false) Map<String, Object> payload) {
-        String payloadJson = payload != null ? payload.toString() : "{\"orderId\": \"ORD-9921\"}";
+        String payloadJson;
+        try {
+            payloadJson = payload != null ? objectMapper.writeValueAsString(payload) : "{\"orderId\": \"ORD-9921\"}";
+        } catch (Exception e) {
+            payloadJson = "{\"orderId\": \"ORD-9921\"}";
+        }
         WorkflowExecution execution = engineService.startWorkflow(workflowId, payloadJson);
         return ResponseEntity.ok(execution);
     }

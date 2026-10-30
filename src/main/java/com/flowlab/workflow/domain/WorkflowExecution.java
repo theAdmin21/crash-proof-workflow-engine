@@ -36,7 +36,7 @@ public class WorkflowExecution {
     @Builder.Default
     private int currentStepIndex = 0;
 
-    @Column(columnDefinition = "JSONB")
+    @Column(columnDefinition = "TEXT")
     private String payload;
 
     @Column(name = "error_message", columnDefinition = "TEXT")

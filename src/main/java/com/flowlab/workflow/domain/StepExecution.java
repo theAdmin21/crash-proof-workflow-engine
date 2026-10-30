@@ -51,10 +51,10 @@ public class StepExecution {
     @Column(name = "duration_ms")
     private Long durationMs;
 
-    @Column(name = "input_payload", columnDefinition = "JSONB")
+    @Column(name = "input_payload", columnDefinition = "TEXT")
     private String inputPayload;
 
-    @Column(name = "output_payload", columnDefinition = "JSONB")
+    @Column(name = "output_payload", columnDefinition = "TEXT")
     private String outputPayload;
 
     @Column(name = "error_message", columnDefinition = "TEXT")
