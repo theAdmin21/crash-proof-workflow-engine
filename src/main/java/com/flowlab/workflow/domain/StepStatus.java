@@ -5,5 +5,6 @@ public enum StepStatus {
     RUNNING,
     COMPLETED,
     FAILED,
-    RETRYING
+    RETRYING,
+    COMPENSATED
 }

@@ -99,7 +99,11 @@
         <div class="flex items-center gap-4">
           <label class="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-500/20 cursor-pointer">
             <input type="checkbox" id="simulateCrashCheck" class="rounded text-amber-500 focus:ring-0">
-            <span>Simulate Worker Crash (Test Recovery)</span>
+            <span>Simulate Crash (Retry)</span>
+          </label>
+          <label class="flex items-center gap-2 text-xs text-purple-400 bg-purple-500/10 px-3 py-2 rounded-lg border border-purple-500/20 cursor-pointer">
+            <input type="checkbox" id="simulateFatalCheck" class="rounded text-purple-500 focus:ring-0">
+            <span>Simulate Fatal Error (Test Saga Rollback)</span>
           </label>
           <button id="startWorkflowBtn" onclick="triggerWorkflow()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-5 py-2.5 rounded-lg shadow-lg shadow-blue-600/30 transition">
             <i data-lucide="play" class="w-4 h-4 fill-current"></i>
@@ -302,6 +306,7 @@
 
     async function triggerWorkflow() {
       const simulateCrash = document.getElementById('simulateCrashCheck').checked;
+      const simulateFatal = document.getElementById('simulateFatalCheck').checked;
       const select = document.getElementById('productSelect');
       const qty = parseInt(document.getElementById('orderQty').value) || 1;
       const name = document.getElementById('custName').value || 'Customer';
@@ -318,7 +323,8 @@
           customerEmail: email,
           sku: select.value,
           quantity: qty,
-          simulate_crash: simulateCrash
+          simulate_crash: simulateCrash,
+          simulate_fatal: simulateFatal
         };
 
         const res = await fetch('/api/workflows/order-processing-workflow/start', {
@@ -357,7 +363,7 @@
         renderPipeline(steps);
         renderHistory(steps);
 
-        const allFinished = steps.every(s => s.status === 'COMPLETED' || s.status === 'FAILED');
+        const allFinished = steps.every(s => s.status === 'COMPLETED' || s.status === 'FAILED' || s.status === 'COMPENSATED');
         if (allFinished && pollInterval) {
           clearInterval(pollInterval);
           loadProducts(); // refresh remaining stock!
@@ -379,6 +385,10 @@
           card.classList.add('border-emerald-500/60', 'bg-emerald-950/20');
           badge.textContent = 'Completed';
           badge.className = 'text-xs text-emerald-400 font-semibold';
+        } else if (step.status === 'COMPENSATED') {
+          card.classList.add('border-purple-500', 'bg-purple-950/30');
+          badge.textContent = 'Compensated (Refunded)';
+          badge.className = 'text-xs text-purple-400 font-semibold';
         } else if (step.status === 'RUNNING') {
           card.classList.add('border-blue-500', 'bg-blue-950/30', 'pulsing-border');
           badge.textContent = `Running (${step.attemptCount} attempt)`;
@@ -427,6 +437,8 @@
     function getStatusPill(status) {
       if (status === 'COMPLETED') {
         return '<span class="inline-flex items-center gap-1.5 text-emerald-400 font-sans"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Success</span>';
+      } else if (status === 'COMPENSATED') {
+        return '<span class="inline-flex items-center gap-1.5 text-purple-400 font-sans"><span class="w-2 h-2 rounded-full bg-purple-400"></span> ↩️ Refunded</span>';
       } else if (status === 'RUNNING') {
         return '<span class="inline-flex items-center gap-1.5 text-blue-400 font-sans"><span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span> Running</span>';
       } else if (status === 'RETRYING') {

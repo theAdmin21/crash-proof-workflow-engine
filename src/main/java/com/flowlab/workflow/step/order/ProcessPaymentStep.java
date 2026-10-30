@@ -46,13 +46,39 @@ public class ProcessPaymentStep implements WorkflowStep {
                 total, customer, txnId, idempotencyKey);
 
         Map<String, Object> outputMap = new HashMap<>();
-        prev.fields().forEachRemaining(entry -> outputMap.put(entry.getKey(), entry.getValue().asText()));
+        prev.fields().forEachRemaining(entry -> {
+            JsonNode val = entry.getValue();
+            if (val.isBoolean()) outputMap.put(entry.getKey(), val.asBoolean());
+            else if (val.isInt()) outputMap.put(entry.getKey(), val.asInt());
+            else if (val.isNumber()) outputMap.put(entry.getKey(), val.numberValue());
+            else outputMap.put(entry.getKey(), val.asText());
+        });
         outputMap.put("paymentStatus", "CHARGED");
         outputMap.put("transactionId", txnId);
         outputMap.put("idempotencyKey", idempotencyKey);
         outputMap.put("amountCharged", total);
-        outputMap.put("simulate_crash", simulateCrash);
 
         return StepResult.ok(objectMapper.writeValueAsString(outputMap));
+    }
+
+    @Override
+    public StepResult compensate(StepExecutionContext context) throws Exception {
+        Thread.sleep(600);
+        JsonNode prev = context.getInputPayload() != null ? objectMapper.readTree(context.getInputPayload()) : null;
+        String txnId = (prev != null && prev.has("transactionId")) ? prev.get("transactionId").asText() : "TXN-UNKNOWN";
+        String amount = (prev != null && prev.has("amountCharged")) ? prev.get("amountCharged").asText() : "0.00";
+        String customer = (prev != null && prev.has("customerName")) ? prev.get("customerName").asText() : "Customer";
+
+        String refundId = "REF-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        log.warn("↩️ [SAGA-COMPENSATION] Auto-refunded payment of ₹{} for {} (Original Txn: {}, Refund ID: {})",
+                amount, customer, txnId, refundId);
+
+        String result = objectMapper.writeValueAsString(Map.of(
+                "compensationStatus", "REFUND_PROCESSED",
+                "refundTransactionId", refundId,
+                "originalTransactionId", txnId,
+                "amountRefunded", "₹" + amount
+        ));
+        return StepResult.ok(result);
     }
 }

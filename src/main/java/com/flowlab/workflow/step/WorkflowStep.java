@@ -4,4 +4,8 @@ public interface WorkflowStep {
     String getStepName();
     int getOrder();
     StepResult execute(StepExecutionContext context) throws Exception;
+
+    default StepResult compensate(StepExecutionContext context) throws Exception {
+        return StepResult.ok("{}");
+    }
 }

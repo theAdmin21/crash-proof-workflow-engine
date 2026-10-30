@@ -38,7 +38,13 @@ public class UpdateInventoryStep implements WorkflowStep {
     @Transactional
     public StepResult execute(StepExecutionContext context) throws Exception {
         JsonNode prev = objectMapper.readTree(context.getInputPayload());
+        boolean simulateFatal = prev.has("simulate_fatal") && prev.get("simulate_fatal").asBoolean();
         boolean simulateCrash = prev.has("simulate_crash") && prev.get("simulate_crash").asBoolean();
+
+        if (simulateFatal) {
+            Thread.sleep(800);
+            return StepResult.fatalFailure("Warehouse stock physically damaged/compromised! Unrecoverable error.");
+        }
 
         if (simulateCrash && context.getAttempt() <= 1) {
             Thread.sleep(800);
@@ -66,5 +72,21 @@ public class UpdateInventoryStep implements WorkflowStep {
         outputMap.put("remainingStock", newStock);
 
         return StepResult.ok(objectMapper.writeValueAsString(outputMap));
+    }
+
+    @Override
+    @Transactional
+    public StepResult compensate(StepExecutionContext context) throws Exception {
+        JsonNode prev = context.getInputPayload() != null ? objectMapper.readTree(context.getInputPayload()) : null;
+        if (prev != null && prev.has("sku") && prev.has("quantity")) {
+            String sku = prev.get("sku").asText();
+            int qty = prev.get("quantity").asInt();
+            productRepository.findById(sku).ifPresent(p -> {
+                p.setStockQuantity(p.getStockQuantity() + qty);
+                productRepository.save(p);
+                log.warn("↩️ [SAGA-COMPENSATION] Restored {} units of stock for {}", qty, p.getName());
+            });
+        }
+        return StepResult.ok("{\"compensation\": \"INVENTORY_RELEASED\"}");
     }
 }

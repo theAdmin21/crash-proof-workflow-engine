@@ -41,6 +41,7 @@ public class ValidateOrderStep implements WorkflowStep {
         String customerEmail = root.has("customerEmail") ? root.get("customerEmail").asText() : "user@example.com";
         String customerName = root.has("customerName") ? root.get("customerName").asText() : "Customer";
         boolean simulateCrash = root.has("simulate_crash") && root.get("simulate_crash").asBoolean();
+        boolean simulateFatal = root.has("simulate_fatal") && root.get("simulate_fatal").asBoolean();
 
         Product product = productRepository.findById(sku)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with SKU: " + sku));
@@ -53,17 +54,19 @@ public class ValidateOrderStep implements WorkflowStep {
         BigDecimal total = product.getPrice().multiply(BigDecimal.valueOf(quantity));
         log.info("Validated order for {} ({} x {}). Total: ₹{}", customerName, quantity, product.getName(), total);
 
-        String output = objectMapper.writeValueAsString(Map.of(
-                "valid", true,
-                "sku", sku,
-                "productName", product.getName(),
-                "quantity", quantity,
-                "unitPrice", product.getPrice(),
-                "totalAmount", total,
-                "customerName", customerName,
-                "customerEmail", customerEmail,
-                "simulate_crash", simulateCrash
-        ));
+        java.util.Map<String, Object> outMap = new java.util.HashMap<>();
+        outMap.put("valid", true);
+        outMap.put("sku", sku);
+        outMap.put("productName", product.getName());
+        outMap.put("quantity", quantity);
+        outMap.put("unitPrice", product.getPrice());
+        outMap.put("totalAmount", total);
+        outMap.put("customerName", customerName);
+        outMap.put("customerEmail", customerEmail);
+        outMap.put("simulate_crash", simulateCrash);
+        outMap.put("simulate_fatal", simulateFatal);
+
+        String output = objectMapper.writeValueAsString(outMap);
 
         return StepResult.ok(output);
     }
